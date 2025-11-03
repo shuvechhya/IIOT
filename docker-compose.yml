@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  iiot_app:
+    build: .
+    container_name: iiot_fastapi_mqtt_influx
+    restart: always
+    network_mode: "host"   # allows container to access host MQTT & InfluxDB
+    environment:
+      - MQTT_BROKER=127.0.0.1
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=gateway/data
+      - INFLUX_HOST=127.0.0.1
+      - INFLUX_PORT=8086
+      - INFLUX_DB=mqtt_data
+    volumes:
+      - .:/app
