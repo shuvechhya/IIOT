@@ -30,6 +30,7 @@
                 <Field>
                     <FieldLabel for="email-{id}">Email</FieldLabel>
                     <Input
+                        bind:value={email}
                         id="email-{id}"
                         type="email"
                         placeholder="m@example.com"
@@ -38,7 +39,12 @@
                 </Field>
                 <Field>
                     <FieldLabel for="password-{id}">Password</FieldLabel>
-                    <Input id="password-{id}" type="password" required />
+                    <Input
+                        bind:value={password}
+                        id="password-{id}"
+                        type="password"
+                        required
+                    />
                 </Field>
                 <Field>
                     <Button type="submit" class="w-full">Login</Button>

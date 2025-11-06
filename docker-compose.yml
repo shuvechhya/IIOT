@@ -2,10 +2,18 @@ version: "3.9"
 
 services:
   iiot_app:
-    build: .
+    build:
+      context: ./connector
+      dockerfile: Dockerfile
     container_name: iiot_fastapi_mqtt_influx
     restart: always
-    network_mode: "host"   # allows container to access host MQTT & InfluxDB
+    network_mode: "host" # allows container to access host MQTT & InfluxDB
+    depends_on:
+      - mongodb1
+      - influxdb
+      - mqtt1
+    networks:
+      - iot-net
     environment:
       - MQTT_BROKER=127.0.0.1
       - MQTT_PORT=1883
@@ -15,3 +23,46 @@ services:
       - INFLUX_DB=mqtt_data
     volumes:
       - .:/app
+
+  mongodb1:
+    image: mongo
+    container_name: mongodb1
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - iot-net
+
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb1
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+    networks:
+      - iot-net
+
+  mqtt1:
+    image: emqx
+    container_name: mqtt1
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+      - "8084:8084"
+      - "8883:8883"
+      - "18083:18083"
+    environment:
+      - EMQX_DASHBOARD__DEFAULT_USERNAME=admin
+      - EMQX_DASHBOARD__DEFAULT_PASSWORD=admin123
+    networks:
+      - iot-net
+
+volumes:
+  mongo-data:
+  influxdb-data:
+
+networks:
+  iot-net:
