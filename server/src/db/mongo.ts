@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { Db, MongoClient } from "mongodb";
 import { MONGODB_URI } from "$env/static/private";
 
 export const client = new MongoClient(MONGODB_URI);
@@ -14,6 +14,6 @@ export async function disconnect(): Promise<void> {
 }
 
 // get the database
-export function getDB(): any {
+export function getDB(): Db {
   return client.db();
 }

@@ -1,11 +1,12 @@
 import { getDB } from "$db/mongo";
+import { sendVerificationEmailFn } from "better-auth/api";
 const db = getDB();
 
 export async function getCollection(
   collection_name: string,
   skip: number,
   limit: number,
-): Promise<JSON> {
+): Promise<Record<string, any>[]> {
   const data = await db
     .collection(collection_name)
     .find({})
@@ -20,7 +21,7 @@ export async function getCollection(
 export async function searchCollection(
   collection_name: string,
   search: string,
-): Promise<JSON> {
+): Promise<Record<string, any>[]> {
   const data = await db
     .collection(collection_name)
     .find({ title: { $regex: search, $options: "i" } })
