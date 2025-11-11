@@ -2,11 +2,35 @@ import { auth } from "$lib/auth";
 import { svelteKitHandler } from "better-auth/svelte-kit";
 import { building } from "$app/environment";
 import { connect, getDB } from "$db/mongo";
+import { redirect } from "@sveltejs/kit";
 
 export async function handle({ event, resolve }) {
   const session = await auth.api.getSession({
     headers: event.request.headers,
   });
+
+  const protectedRoutes = ["/admin", "/dashboard"];
+
+  if (protectedRoutes.some((route) => event.url.pathname.startsWith(route))) {
+    if (!session?.user) {
+      redirect(307, "/");
+    }
+
+    if (
+      event.url.pathname.startsWith("/admin") &&
+      session?.user?.role !== "admin"
+    ) {
+      redirect(307, "/dashboard");
+    }
+
+    if (event.url.pathname === "/" && session?.user) {
+      if (session?.user?.role === "admin") {
+        redirect(307, "/admin");
+      } else {
+        redirect(307, "/dashboard");
+      }
+    }
+  }
 
   if (session) {
     event.locals.session = session.session;
