@@ -1,0 +1,34 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+
+  # --- System logs (rsyslog, auth, kernel, daemon) ---
+  - job_name: rsyslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: rsyslog
+          host: raspberrypi
+          __path__: /var/log/{syslog,auth.log,kern.log,daemon.log}
+
+  # --- Mosquitto logs ---
+  - job_name: mosquitto
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: mosquitto
+          host: raspberrypi5   # adjust for your device
+          __path__: /root/IIOT/fastapi_logs/mosquitto.log

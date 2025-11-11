@@ -1,0 +1,107 @@
+#version: "3.9"
+
+services:
+  emqx:
+    image: emqx/emqx:5.1.0
+    container_name: emqx
+    restart: unless-stopped
+    ports:
+      - "1883:1883"      # MQTT
+      - "8083:8083"      # WebSocket MQTT
+      - "18083:18083"    # Dashboard
+    environment:
+      EMQX_ALLOW_ANONYMOUS: "true"            
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin  
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: admin  
+      EMQX_NODE__NAME: emqx@emqx
+      EMQX_NODE__COOKIE: mysecretcookie
+
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb
+    restart: unless-stopped
+    ports:
+      - "8087:8086"
+    environment:
+      INFLUXDB_DB: mqtt_data
+      INFLUXDB_ADMIN_USER: admin
+      INFLUXDB_ADMIN_PASSWORD: secret123
+      INFLUXDB_HTTP_AUTH_ENABLED: "true"
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret123
+
+  fastapi:
+    build: .
+    container_name: fastapi_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # MQTT Broker (no credentials needed)
+      MQTT_BROKER: emqx
+      MQTT_PORT: 1883
+
+      # InfluxDB
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_USERNAME: admin
+      INFLUXDB_PASSWORD: secret123
+      INFLUXDB_DB: mqtt_data
+
+      # MongoDB
+      MONGO_DB: mqtt_data
+      MONGO_URI: mongodb://admin:secret123@mongo:27017/?authSource=admin
+    depends_on:
+      - emqx
+      - influxdb
+      - mongo
+    volumes:
+      - ./fastapi_logs:/app/logs
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - loki
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/config/loki-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/config/loki-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail-config.yaml:/mnt/config/promtail-config.yaml
+      - /var/log:/var/log
+      - ./fastapi_logs:/root/IIOT/fastapi_logs
+    command: -config.file=/mnt/config/promtail-config.yaml
+    depends_on:
+      - loki
+
+volumes:
+  loki_data:
+  grafana_data:

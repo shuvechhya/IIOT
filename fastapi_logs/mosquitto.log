@@ -1,0 +1,38 @@
+2025-11-11 09:07:27,996 - [ONLINE] ClientID: curl_test_client | IP: 192.168.1.100 | Username: my_test_user
+2025-11-11 10:28:41,691 - [ONLINE] ClientID: MzI1MTg5NzA0NzI5MzgxMTU4NzY5ODgyMjU2NDQ1Mjc2MTG | IP: undefined | Username: undefined
+2025-11-11 10:28:50,267 - [OFFLINE] ClientID: MzI1MTg3Nzc3MTkwODIzNDY2MDcwOTU2Nzg3OTMzNTExNjI | Reason: tcp_closed | IP: undefined | Username: undefined
+2025-11-11 10:44:48,167 - [ONLINE] ClientID: curl_test_client | IP: 192.168.1.100 | Username: my_test_user
+2025-11-11 12:39:20,323 - [OFFLINE] ClientID: curl_test_client | Reason: test_disconnect | IP: 192.168.1.100 | Username: my_test_user
+2025-11-11 12:47:17,577 - [OFFLINE] ClientID: curl_test_client | Reason: test_disconnect | IP: 192.168.1.100 | Username: my_test_user
+2025-11-11 13:22:37,721 - Status:[OFFLINE] ClientID: curl_test_client Reason: test_disconnect | IP: 192.168.1.100 | Username: my_test_user
+2025-11-11 13:22:47,911 - Status:[ONLINE] ClientID: curl_test_client IP: 192.168.1.100 | Username: my_test_user
+2025-11-11 13:24:06,136 - Status:[ONLINE] ClientID: curl_test_client IP: 192.168.1.100 | Username: my_test_user
+2025-11-11 14:28:32,752 - Status:[ONLINE] ClientID: MzI1MTkyMzU5NDEyMDUwOTA2NDAwNDg2NDY4MDM0MjMyMzC IP: undefined | Username: undefined
+2025-11-11 14:39:09,932 - Status:[ONLINE] ClientID: MzI1MTkyNDc2OTUwODU5ODQyNjEyNzg4Mjk1MTUxNzc5ODE IP: undefined | Username: undefined
+2025-11-11 14:41:09,129 - Status:[ONLINE] ClientID: MzI1MTkyNDk4OTM4ODM1MTUyOTI2NzIxNjAxMDExMDU2NjE IP: undefined | Username: undefined
+2025-11-11 14:41:14,138 - Status:[ONLINE] ClientID: MzI1MTkyNDk5ODYyOTQzMjQ0MDQzMjc1Mjk4Nzc1MzY3NjI IP: undefined | Username: undefined
+2025-11-11 14:41:42,817 - Status:[ONLINE] ClientID: MzI1MTkyNTA1MTUzMjA4NjA3NDIxOTcyNDQ5MjEwNTMxODE IP: undefined | Username: undefined
+2025-11-11 14:42:22,568 - Status:[ONLINE] ClientID: MzI1MTkyNTEyNDg2MDA5NDQ2Mzc4MzE4NTcxNTU4MDEwODI IP: undefined | Username: undefined
+2025-11-11 14:42:27,576 - Status:[ONLINE] ClientID: MzI1MTkyNTEzNDA5NzAxOTMyMzUwODkxNTkzMTE3ODU5ODE IP: undefined | Username: undefined
+2025-11-11 14:42:59,672 - Status:[ONLINE] ClientID: MzI1MTkyNTE5MzMwNTcwMTY0MjI2NTUzNDUxMDI4MTUyMzC IP: undefined | Username: undefined
+2025-11-11 14:43:57,800 - Status:[ONLINE] ClientID: MzI1MTkyNTMwMDUzMjY3NzMzOTUwNzM4NDIxMDQ4Mjc5MDE IP: undefined | Username: undefined
+2025-11-11 14:44:02,806 - Status:[ONLINE] ClientID: MzI1MTkyNTMwOTc2NjMzNTI4MDg1NzY2MDQ2NDU2ODcyOTG IP: undefined | Username: undefined
+2025-11-11 14:44:10,493 - Status:[ONLINE] ClientID: MzI1MTkyNTMyMzk0MzcxODc4OTI4NzY4OTE4MDcwODg2NDA IP: undefined | Username: undefined
+2025-11-11 14:44:15,522 - Status:[ONLINE] ClientID: MzI1MTkyNTMzMzIyMTE3ODUyNDQ0MDk4ODc2NTEwNjk5NTC IP: undefined | Username: undefined
+2025-11-11 14:44:35,699 - Status:[ONLINE] ClientID: MzI1MTkyNTM3MDQ0MjMzNjE4Njg0MTM5NDc2MjU2Njg2MDI IP: undefined | Username: undefined
+2025-11-11 14:44:37,613 - Status:[ONLINE] ClientID: MzI1MTkyNTM3Mzk3NTM1OTkxMzYwNTA2MDg2MTU3ODQ0NDI IP: undefined | Username: undefined
+2025-11-11 14:44:40,705 - Status:[ONLINE] ClientID: MzI1MTkyNTM3OTY3Njc3OTk1OTQ4OTIxMTA0MzQ5OTIxMjI IP: undefined | Username: undefined
+2025-11-11 14:44:56,007 - Status:[ONLINE] ClientID: MzI1MTkyNTQwNzkwNDQ0NzA2NTAwNzAwMjI5NDMwMTQ5MTC IP: undefined | Username: undefined
+2025-11-11 14:45:37,623 - Status:[ONLINE] ClientID: MzI1MTkyNTQ4NDY3MDk1NDM3NTM1MTYyNzEzMjIzOTg3MjA IP: undefined | Username: undefined
+2025-11-11 14:45:42,628 - Status:[ONLINE] ClientID: MzI1MTkyNTQ5MzkwNTQzNjg4NjE2MTk5ODIwMzIwNDQwMzC IP: undefined | Username: undefined
+2025-11-11 14:50:36,530 - Status:[ONLINE] ClientID: MzI1MTkyNjAzNjA1Njc0MTI0MzQzMDA5ODA0Mzk5NDExMjA IP: undefined | Username: undefined
+2025-11-11 16:01:05,070 - clientid=MzI1MTkzMzgzNjMzODMyMDI4OTEyMTg3MDQyMzQ5NzExMzG | username=undefined | timestamp=1762876865068 | ip_address=192.168.1.136:50628 | event=client.connected | connected_at=1762876865068 | topic=undefined
+2025-11-11 16:01:08,880 - clientid=MzI1MTkzMzg0MzM2NDk1MDczOTkxMjUwMDA1MTYxNDEwNTG | username=undefined | timestamp=1762876868878 | ip_address=192.168.1.136:50634 | event=client.connected | connected_at=1762876868877 | topic=undefined
+2025-11-11 16:01:10,076 - clientid=MzI1MTkzMzg0NTU3MjAyOTg4MTM1NTU1MzA2NDI4ODI1NjA | username=undefined | timestamp=1762876870074 | ip_address=172.18.0.8:55565 | event=client.connected | connected_at=1762876870074 | topic=undefined
+2025-11-11 16:02:05,738 - clientid=MzI1MTkzMzk0ODI1MTc2MzI2MDU5MTUxOTE3OTIxMDc1MjA | username=undefined | timestamp=1762876925737 | ip_address=192.168.1.124:40828 | event=client.connected | connected_at=1762876925737 | topic=undefined
+2025-11-11 16:02:10,747 - clientid=MzI1MTkzMzk1NzQ5MDU5NTUxMzY1NDQ3MDk2MjQ1Mjg4OTG | username=undefined | timestamp=1762876930745 | ip_address=172.18.0.8:38865 | event=client.connected | connected_at=1762876930745 | topic=undefined
+2025-11-11 16:02:10,975 - clientid=MzI1MTkzMzkwNTY3Nzk3NjU4OTI1MjY2MzIwMTcwNjgwMzC | username=undefined | timestamp=1762876902657 | ip_address=172.18.0.8:40213 | event=client.connected | connected_at=1762876902657 | topic=undefined
+2025-11-11 16:03:04,265 - clientid=MzI1MTkzNDA1NjIxNDgyODYwOTk3ODYzNzk3MjM0NzI4OTG | username=undefined | timestamp=1762876984264 | ip_address=192.168.1.136:46156 | event=client.connected | connected_at=1762876984264 | topic=undefined
+2025-11-11 16:03:09,272 - clientid=MzI1MTkzNDA2NTQ1MDQwMTMyMzM2Mzc2NTI3NzgyNTQzMzG | username=undefined | timestamp=1762876989270 | ip_address=172.18.0.8:46891 | event=client.connected | connected_at=1762876989270 | topic=undefined
+2025-11-11 16:34:16,951 - clientid=MzI1MTkzNzUxMDcwOTY4MTE4MzMxMTY0MTYxNjc2NDEwODI | username=undefined | timestamp=1762878856949 | ip_address=192.168.1.124:46054 | event=client.connected | connected_at=1762878856949 | topic=undefined
+2025-11-11 16:34:21,957 - clientid=MzI1MTkzNzUxOTk0NDc0ODQ1NTkwOTE0OTI4MDUxNDg2NzC | username=undefined | timestamp=1762878861955 | ip_address=172.18.0.8:49979 | event=client.connected | connected_at=1762878861955 | topic=undefined
