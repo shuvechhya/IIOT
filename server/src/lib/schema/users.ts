@@ -2,17 +2,13 @@ import * as z from "zod";
 import { ObjectId } from "mongodb";
 
 export const usersSchema = z.object({
-  id: z.string(),
-  name: z.string(),
+  _id: z.instanceof(ObjectId),
+  name: z.string().check(z.minLength(8)),
   email: z.email(),
-  emailVerified: z.boolean(),
-  image: z.union([z.string(), z.null(), z.undefined()]),
-  role: z.union([z.string(), z.undefined()]),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  banned: z.union([z.boolean(), z.null(), z.undefined()]),
-  banReason: z.union([z.string(), z.null(), z.undefined()]),
-  banExpires: z.union([z.date(), z.null(), z.undefined()]),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  role: z.enum(["gateway", "manager", "admin"]),
+  banned: z.boolean(),
 });
 
 export const usersListSchema = usersSchema.array();
