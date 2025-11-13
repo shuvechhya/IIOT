@@ -1,143 +1,83 @@
 <script lang="ts">
-  // import CameraIcon from "@tabler/icons-svelte/icons/camera";
-  import ChartBarIcon from "@tabler/icons-svelte/icons/chart-bar";
-  import DashboardIcon from "@tabler/icons-svelte/icons/dashboard";
-  // import DatabaseIcon from "@tabler/icons-svelte/icons/database";
-  // import FileAiIcon from "@tabler/icons-svelte/icons/file-ai";
-  // import FileDescriptionIcon from "@tabler/icons-svelte/icons/file-description";
-  // import FileWordIcon from "@tabler/icons-svelte/icons/file-word";
-  // import FolderIcon from "@tabler/icons-svelte/icons/folder";
-  import HelpIcon from "@tabler/icons-svelte/icons/help";
-  // import InnerShadowTopIcon from "@tabler/icons-svelte/icons/inner-shadow-top";
-  // import ListDetailsIcon from "@tabler/icons-svelte/icons/list-details";
-  // import ReportIcon from "@tabler/icons-svelte/icons/report";
-  import SearchIcon from "@tabler/icons-svelte/icons/search";
-  import SettingsIcon from "@tabler/icons-svelte/icons/settings";
-  // import UsersIcon from "@tabler/icons-svelte/icons/users";
-  import NavDocuments from "./nav-documents.svelte";
-  import NavMain from "./nav-main.svelte";
-  // import NavSecondary from "./nav-secondary.svelte";
-  import NavUser from "./nav-user.svelte";
-  import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-  import type { ComponentProps } from "svelte";
+    // import CameraIcon from "@tabler/icons-svelte/icons/camera";
+    import ChartBarIcon from "@tabler/icons-svelte/icons/chart-bar";
+    import DashboardIcon from "@tabler/icons-svelte/icons/dashboard";
+    // import DatabaseIcon from "@tabler/icons-svelte/icons/database";
+    // import FileAiIcon from "@tabler/icons-svelte/icons/file-ai";
+    // import FileDescriptionIcon from "@tabler/icons-svelte/icons/file-description";
+    // import FileWordIcon from "@tabler/icons-svelte/icons/file-word";
+    // import FolderIcon from "@tabler/icons-svelte/icons/folder";
+    import HelpIcon from "@tabler/icons-svelte/icons/help";
+    // import InnerShadowTopIcon from "@tabler/icons-svelte/icons/inner-shadow-top";
+    // import ListDetailsIcon from "@tabler/icons-svelte/icons/list-details";
+    // import ReportIcon from "@tabler/icons-svelte/icons/report";
+    import SearchIcon from "@tabler/icons-svelte/icons/search";
+    import SettingsIcon from "@tabler/icons-svelte/icons/settings";
+    // import UsersIcon from "@tabler/icons-svelte/icons/users";
+    import NavDocuments from "./nav-documents.svelte";
+    import NavMain from "./nav-main.svelte";
+    // import NavSecondary from "./nav-secondary.svelte";
+    import NavUser from "./nav-user.svelte";
+    import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+    import type { ComponentProps } from "svelte";
+    import { getUser } from "$lib/api/auth.remote";
 
-  const data = {
-    user: {
-      name: "shadcn",
-      email: "m@example.com",
-      avatar: "/avatars/shadcn.jpg",
-    },
-    navMain: [
-      {
-        title: "Dashboard",
-        url: "#",
-        icon: DashboardIcon,
-      },
-      {
-        title: "Analytics",
-        url: "#",
-        icon: ChartBarIcon,
-      },
-    ],
-    // navClouds: [
-    //     {
-    //         title: "Capture",
-    //         icon: CameraIcon,
-    //         isActive: true,
-    //         url: "#",
-    //         items: [
-    //             {
-    //                 title: "Active Proposals",
-    //                 url: "#",
-    //             },
-    //             {
-    //                 title: "Archived",
-    //                 url: "#",
-    //             },
-    //         ],
-    //     },
-    //     {
-    //         title: "Proposal",
-    //         icon: FileDescriptionIcon,
-    //         url: "#",
-    //         items: [
-    //             {
-    //                 title: "Active Proposals",
-    //                 url: "#",
-    //             },
-    //             {
-    //                 title: "Archived",
-    //                 url: "#",
-    //             },
-    //         ],
-    //     },
-    //     {
-    //         title: "Prompts",
-    //         icon: FileAiIcon,
-    //         url: "#",
-    //         items: [
-    //             {
-    //                 title: "Active Proposals",
-    //                 url: "#",
-    //             },
-    //             {
-    //                 title: "Archived",
-    //                 url: "#",
-    //             },
-    //         ],
-    //     },
-    // ],
-    navSecondary: [
-      {
-        title: "Settings",
-        url: "#",
-        icon: SettingsIcon,
-      },
-      {
-        title: "Get Help",
-        url: "#",
-        icon: HelpIcon,
-      },
-      {
-        title: "Search",
-        url: "#",
-        icon: SearchIcon,
-      },
-    ],
-    documents: [
-      {
-        name: "Settings",
-        url: "#",
-        icon: SettingsIcon,
-      },
-      // {
-      //     name: "Data Library",
-      //     url: "#",
-      //     icon: DatabaseIcon,
-      // },
-      // {
-      //     name: "Reports",
-      //     url: "#",
-      //     icon: ReportIcon,
-      // },
-      // {
-      //     name: "Word Assistant",
-      //     url: "#",
-      //     icon: FileWordIcon,
-      // },
-    ],
-  };
+    const data = {
+        navMain: [
+            {
+                id: "dashboard",
+                title: "Dashboard",
+                url: "#",
+                icon: DashboardIcon,
+            },
+            {
+                id: "analytics",
+                title: "Analytics",
+                url: "#",
+                icon: ChartBarIcon,
+            },
+        ],
+        // navSecondary: [
+        //     {
+        //         title: "Settings",
+        //         url: "#",
+        //         icon: SettingsIcon,
+        //     },
+        //     {
+        //         title: "Get Help",
+        //         url: "#",
+        //         icon: HelpIcon,
+        //     },
+        //     {
+        //         title: "Search",
+        //         url: "#",
+        //         icon: SearchIcon,
+        //     },
+        // ],
+        documents: [
+            {
+                id: "settings",
+                name: "Settings",
+                url: "#",
+                icon: SettingsIcon,
+            },
+        ],
+    };
 
-  let { ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
+    let { ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
+
+    const { name, email, role } = await getUser();
 </script>
 
 <Sidebar.Root collapsible="offcanvas" {...restProps}>
-  <Sidebar.Header>
-    <NavUser user={data.user} />
-  </Sidebar.Header>
-  <Sidebar.Content>
-    <NavMain items={data.navMain} />
-    <NavDocuments items={data.documents} />
-    <!-- <NavSecondary items={data.navSecondary} class="mt-auto" /> -->
-  </Sidebar.Content>
+    <Sidebar.Header>
+        <NavUser user={{ name, email, role }} />
+    </Sidebar.Header>
+    <Sidebar.Content>
+        {#if role === "admin"}
+            <NavMain items={data.navMain} />
+            <NavDocuments items={data.documents} />
+        {/if}
+        <!-- <NavSecondary items={data.navSecondary} class="mt-auto" /> -->
+    </Sidebar.Content>
 </Sidebar.Root>

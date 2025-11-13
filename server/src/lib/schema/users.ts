@@ -15,7 +15,7 @@ export const usersSchema = z.object({
   banExpires: z.union([z.date(), z.null(), z.undefined()]),
 });
 
-export const usersListSchema = usersSchema.array();
+export const UsersListSchema = usersSchema.array();
 
 export const sessionSchema = z.object({
   _id: z.instanceof(ObjectId),

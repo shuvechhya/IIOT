@@ -22,13 +22,13 @@ export async function handle({ event, resolve }) {
     ) {
       redirect(307, "/dashboard");
     }
+  }
 
-    if (event.url.pathname === "/" && session?.user) {
-      if (session?.user?.role === "admin") {
-        redirect(307, "/admin");
-      } else {
-        redirect(307, "/dashboard");
-      }
+  if (event.url.pathname === "/" && session?.user) {
+    if (session?.user?.role === "admin") {
+      redirect(307, "/admin");
+    } else {
+      redirect(307, "/dashboard");
     }
   }
 

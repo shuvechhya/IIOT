@@ -58,7 +58,7 @@
         },
         {
             id: "actions",
-            cell: () => renderSnippet(DataTableActions),
+            cell: ({ row }) => renderSnippet(DataTableActions, { row }),
         },
     ];
 </script>
@@ -116,6 +116,7 @@
     import { move } from "@dnd-kit/helpers";
     import { useSortable } from "@dnd-kit-svelte/svelte/sortable";
     import CreateUserDialog from "./create-user-dialog.svelte";
+    import { deleteUser, updateUser } from "$lib/api/admin.remote.js";
 
     let { data }: { data: Schema[] } = $props();
     let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -464,7 +465,7 @@
     </div>
 {/snippet}
 
-{#snippet DataTableActions()}
+{#snippet DataTableActions({ row }: { row: Row<Schema> })}
     <DropdownMenu.Root>
         <DropdownMenu.Trigger
             class="data-[state=open]:bg-muted text-muted-foreground flex size-8"
@@ -478,10 +479,11 @@
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="end" class="w-32">
             <DropdownMenu.Item>Edit</DropdownMenu.Item>
-            <DropdownMenu.Item>Make a copy</DropdownMenu.Item>
-            <DropdownMenu.Item>Favorite</DropdownMenu.Item>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item variant="destructive">Delete</DropdownMenu.Item>
+            <DropdownMenu.Item
+                variant="destructive"
+                onclick={async () => await deleteUser(row.original.id)}
+                >Delete</DropdownMenu.Item
+            >
         </DropdownMenu.Content>
     </DropdownMenu.Root>
 {/snippet}

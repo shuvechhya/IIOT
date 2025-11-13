@@ -10,7 +10,7 @@
     import { authClient } from "$lib/auth-client";
     import { goto } from "$app/navigation";
 
-    let { user }: { user: { name: string; email: string; avatar: string } } =
+    let { user }: { user: { name: string; email: string; role: string } } =
         $props();
 
     const sidebar = Sidebar.useSidebar();
@@ -31,9 +31,8 @@
                         class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                     >
                         <Avatar.Root class="size-8 rounded-lg grayscale">
-                            <Avatar.Image src={user.avatar} alt={user.name} />
                             <Avatar.Fallback class="rounded-lg"
-                                >CN</Avatar.Fallback
+                                >User</Avatar.Fallback
                             >
                         </Avatar.Root>
                         <div
@@ -62,9 +61,8 @@
                         class="flex items-center gap-2 px-1 py-1.5 text-left text-sm"
                     >
                         <Avatar.Root class="size-8 rounded-lg">
-                            <Avatar.Image src={user.avatar} alt={user.name} />
                             <Avatar.Fallback class="rounded-lg"
-                                >CN</Avatar.Fallback
+                                >User</Avatar.Fallback
                             >
                         </Avatar.Root>
                         <div
@@ -82,7 +80,7 @@
                 </DropdownMenu.Label>
                 <DropdownMenu.Separator />
                 <DropdownMenu.Group>
-                    <DropdownMenu.Item>
+                    <DropdownMenu.Item disabled>
                         <UserCircleIcon />
                         Account
                     </DropdownMenu.Item>

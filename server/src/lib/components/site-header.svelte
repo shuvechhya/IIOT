@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Separator } from "$lib/components/ui/separator/index.js";
     import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+    import { DashboardNav } from "$lib/global/Global.svelte";
 </script>
 
 <header
@@ -12,6 +13,6 @@
             orientation="vertical"
             class="mx-2 data-[orientation=vertical]:h-4"
         />
-        <h1 class="text-base font-medium">Documents</h1>
+        <h1 class="text-base font-medium">{DashboardNav.value}</h1>
     </div>
 </header>
