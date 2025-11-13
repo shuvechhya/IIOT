@@ -117,40 +117,72 @@ def on_message(client, userdata, msg):
         data = payload.get("Data", payload)
         line = "production1" if "1" in topic else "production2"
 
-	 # ----------------------
+        # ----------------------
+        # Per-line OK/NG maps
+        # ----------------------
+        if line == "production1":
+            OK_LINE_MAP = {"good": "OK1", "ok": "OK1", "ok1": "OK1", "pass": "OK1", "passed": "OK1", "accepted": "OK1", "success": "OK1"}
+            NG_LINE_MAP = {"ng": "NG1", "ng1": "NG1", "bad": "NG1", "fail": "NG1", "failed": "NG1"}
+        else:
+            OK_LINE_MAP = {"good": "OK2", "ok": "OK2", "ok2": "OK2", "pass": "OK2", "passed": "OK2", "accepted": "OK2", "success": "OK2"}
+            NG_LINE_MAP = {"ng": "NG2", "ng2": "NG2", "bad": "NG2", "fail": "NG2", "failed": "NG2"}
+
+        # ----------------------
         # Empty payload check
         # ----------------------
         if not data or all(v in (None, {}) for v in data.values()):
             store_invalid(line, data, "Empty payload")
             return
 
-        # Normalize Q/P/A variants
-        data = { QPA_MAP.get(k, k): v for k,v in data.items() }
+        # ----------------------
+        # Normalize keys (Q/P/A + OK/NG)
+        # ----------------------
+        normalized_keys = {}
+        for k, v in data.items():
+            key_lower = k.lower()
+            # Map Q/P/A fields
+            norm_key = QPA_MAP.get(k)
+            # Map OK/NG fields per line
+            if not norm_key:
+                norm_key = OK_LINE_MAP.get(key_lower) or NG_LINE_MAP.get(key_lower)
+            # If still not mapped, keep original
+            if not norm_key:
+                norm_key = k
+            normalized_keys[norm_key] = v
+        data = normalized_keys
 
+        # ----------------------
         # Detect invalid keys
+        # ----------------------
         invalid_keys = set(data.keys()) - ALL_FIELDS
         if invalid_keys:
             store_invalid(line, data, f"Contains invalid keys: {invalid_keys}")
             return
 
+        # ----------------------
         # Check for missing required fields
+        # ----------------------
         missing_fields = [f for f in REQUIRED_FIELDS[line] if f not in data]
         if missing_fields and any(f in data for f in REQUIRED_FIELDS[line]):
             store_invalid(line, data, f"Missing required fields: {missing_fields}")
             return
 
-        # Normalize fields
+        # ----------------------
+        # Normalize numeric fields
+        # ----------------------
         normalized = {}
         # Numeric production metrics
-        for field_map in zip(["Total","OK","NG","State","AlarmCode","Measurement","Store"],
-                             REQUIRED_FIELDS[line]):
+        for field_map in zip(["total","ok","ng","state","alarmcode","measurement","store"], REQUIRED_FIELDS[line]):
             norm_field, data_field = field_map
-            normalized[norm_field.lower()] = data.get(data_field, 0)
+            normalized[norm_field] = data.get(data_field, 0)
+
         # Q/P/A metrics
         for metric in ["Quality","Performance","Availability"]:
             normalized[metric.lower()] = data.get(metric, 0)
 
+        # ----------------------
         # Validate numeric fields
+        # ----------------------
         for key, value in normalized.items():
             if not isinstance(value, (int, float)):
                 try:
@@ -164,15 +196,13 @@ def on_message(client, userdata, msg):
 
         # Write to InfluxDB (if connected)
         if influx_client:
-            # Only write production numeric metrics if present
             if any(data.get(f) is not None for f in REQUIRED_FIELDS[line]):
                 influx_client.write_points([{
                     "measurement": line,
                     "tags": {"source": "factory"},
                     "fields": {k: normalized[k] for k in ["state","total","ok","ng","alarmcode","measurement","store"]}
                 }])
-            # Always write Q/P/A metrics
-            for metric_name in ["quality", "performance", "availability"]:
+            for metric_name in ["quality","performance","availability"]:
                 influx_client.write_points([{
                     "measurement": metric_name,
                     "tags": {"source": "factory", "line": line},
@@ -222,12 +252,12 @@ def get_latest_influx(limit: int = 10):
         "availability": {"production1": [], "production2": []}
     }
     try:
-        for line in ["production1", "production2"]:
+        for line in ["production1","production2"]:
             q = f'SELECT * FROM "{line}" ORDER BY time DESC LIMIT {limit}'
             res = list(influx_client.query(q).get_points())
             result[line] = res
-        for metric in ["quality", "performance", "availability"]:
-            for line in ["production1", "production2"]:
+        for metric in ["quality","performance","availability"]:
+            for line in ["production1","production2"]:
                 q = f'SELECT * FROM "{metric}" WHERE "line"=\'{line}\' ORDER BY time DESC LIMIT {limit}'
                 res = list(influx_client.query(q).get_points())
                 result[metric][line] = res
@@ -239,5 +269,6 @@ def get_latest_influx(limit: int = 10):
 @app.get("/invalid_payloads")
 def get_invalid_payloads(limit: int = 10):
     """Return latest invalid payloads from MongoDB"""
-    docs = list(invalid_col.find({}, {"_id": 0}).sort("time", -1).limit(limit))
+    docs = list(invalid_col.find({}, {"_id": 0}).sort("time",-1).limit(limit))
     return docs
+
