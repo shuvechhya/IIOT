@@ -1,11 +1,11 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from pymongo import MongoClient
 from influxdb import InfluxDBClient
 import paho.mqtt.client as mqtt
 import os, json, time
 from threading import Thread
 from datetime import datetime
-from webhook_routes import router as webhook_router
 
 # ========================
 # App Initialization
@@ -17,11 +17,37 @@ app = FastAPI()
 # ========================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "emqx")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
+
 INFLUX_HOST = os.getenv("INFLUX_HOST", "influxdb")
 INFLUX_PORT = int(os.getenv("INFLUX_PORT", 8086))
-INFLUX_DB = os.getenv("INFLUX_DB", "mqtt_data")
+INFLUX_USER = os.getenv("INFLUX_USER", "admin")
+INFLUX_PASS = os.getenv("INFLUX_PASS", "secret123")
+
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:secret123@mongo:27017/?authSource=admin")
 MONGO_DB = os.getenv("MONGO_DB", "mqtt_data")
+
+# ========================
+# Allowed Topics & Lines
+# ========================
+ALLOWED_TOPICS = {
+    "iot/factory/piyawat/production_all": "factory_piyawat",
+    "iot/factory/gw1/production_all": "factory_gw1",
+    "iot/factory/gw2/production_all": "factory_gw2",
+}
+ALLOWED_LINES = {"production1", "production2"}
+
+OPTIONAL_FIELDS = ["total", "ok", "ng", "state", "alarmcode", "measurement", "store"]
+REQUIRED_METRICS = ["quality", "performance", "availability", "oee"]
+
+QPA_MAP = {
+    "Q": "quality", "%Q": "quality", "Quality": "quality",
+    "P": "performance", "%P": "performance", "Performance": "performance",
+    "A": "availability", "%A": "availability", "Availability": "availability",
+    "OEE": "oee", "%OEE": "oee", "oee": "oee"
+}
+
+OK_MAP = {"good": "ok", "ok": "ok", "ok1": "ok", "pass": "ok", "passed": "ok", "accepted": "ok", "success": "ok"}
+NG_MAP = {"ng": "ng", "ng1": "ng", "bad": "ng", "fail": "ng", "failed": "ng"}
 
 # ========================
 # MongoDB Setup
@@ -35,23 +61,24 @@ print("Connected to MongoDB successfully.")
 # ========================
 # InfluxDB Setup
 # ========================
-def connect_influx():
-    for i in range(10):
+def connect_influx(retries=10, delay=5):
+    for i in range(retries):
         try:
             client = InfluxDBClient(
                 host=INFLUX_HOST,
                 port=INFLUX_PORT,
-                username="admin",
-                password="secret123",
-                database=INFLUX_DB
+                username=INFLUX_USER,
+                password=INFLUX_PASS,
+                timeout=5,
+                retries=3
             )
-            client.create_database(INFLUX_DB)
+            client.get_list_database()
             print("Connected to InfluxDB successfully.")
             return client
         except Exception as e:
-            print(f"InfluxDB not ready, retrying ({i+1}/10): {e}")
-            time.sleep(5)
-    print("Could not connect to InfluxDB after retries.")
+            print(f"InfluxDB not ready, retrying ({i+1}/{retries}): {e}")
+            time.sleep(delay)
+    print("Could not connect to InfluxDB.")
     return None
 
 influx_client = connect_influx()
@@ -61,165 +88,119 @@ influx_client = connect_influx()
 # ========================
 mqtt_client = mqtt.Client()
 
-PRODUCTION_TOPICS = ["iot/factory/production1", "iot/factory/production2"]
-
-REQUIRED_FIELDS = {
-    "production1": ["Total1", "OK1", "NG1", "State1", "AlarmCode1", "Measurement1", "Store1"],
-    "production2": ["Total2", "OK2", "NG2", "State2", "AlarmCode2", "Measurement2", "Store2"]
-}
-
-ALL_FIELDS = set([
-    "Total1","OK1","NG1","State1","AlarmCode1","Measurement1","Store1",
-    "Total2","OK2","NG2","State2","AlarmCode2","Measurement2","Store2",
-    "Quality","Performance","Availability"
-])
-
-# Mapping Q/P/A variants
-QPA_MAP = {
-    "Q": "Quality", "P": "Performance", "A": "Availability",
-    "%Q": "Quality", "%P": "Performance", "%A": "Availability"
-}
-
-def store_invalid(line, data, error_msg):
-    """Store invalid payloads in MongoDB and publish to MQTT error topic"""
+def store_invalid(source, data, error_msg):
     doc = {
         "time": datetime.utcnow().isoformat() + "Z",
-        "payload": json.dumps(data),
+        "payload": json.dumps(data) if not isinstance(data, str) else data,
         "error": error_msg,
-        "source": line
+        "source": source
     }
     invalid_col.insert_one(doc)
-    mqtt_client.publish("iot/factory/errors", json.dumps(doc))
-    print(f"Stored invalid payload: {doc}")
+    try:
+        mqtt_client.publish("iot/factory/errors", json.dumps(doc))
+    except Exception:
+        pass
+    print("Stored invalid payload:", doc)
 
-# Include webhook routes
-app.include_router(webhook_router, prefix="/logs")
-
-# ------------------------
-# MQTT Handlers
-# ------------------------
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print(f"Connected to MQTT Broker at {MQTT_BROKER}:{MQTT_PORT}")
-        for topic in PRODUCTION_TOPICS:
-            client.subscribe(topic)
+        client.subscribe("iot/factory/+/production_all")
     else:
-        print(f"Failed to connect, return code {rc}")
+        print(f"Failed to connect to MQTT, return code {rc}")
 
 def on_message(client, userdata, msg):
+    raw_payload = msg.payload.decode(errors="ignore")
     topic = msg.topic
-    if topic not in PRODUCTION_TOPICS:
-        print(f"Ignored message on unknown topic: {topic}")
+    try:
+        payload = json.loads(raw_payload)
+    except Exception:
+        store_invalid(topic, raw_payload, "Payload is not valid JSON")
         return
 
-    try:
-        payload = json.loads(msg.payload.decode())
-        data = payload.get("Data", payload)
-        line = "production1" if "1" in topic else "production2"
+    if topic not in ALLOWED_TOPICS:
+        store_invalid(topic, payload, "Topic not allowed")
+        return
 
-        # ----------------------
-        # Per-line OK/NG maps
-        # ----------------------
-        if line == "production1":
-            OK_LINE_MAP = {"good": "OK1", "ok": "OK1", "ok1": "OK1", "pass": "OK1", "passed": "OK1", "accepted": "OK1", "success": "OK1"}
-            NG_LINE_MAP = {"ng": "NG1", "ng1": "NG1", "bad": "NG1", "fail": "NG1", "failed": "NG1"}
-        else:
-            OK_LINE_MAP = {"good": "OK2", "ok": "OK2", "ok2": "OK2", "pass": "OK2", "passed": "OK2", "accepted": "OK2", "success": "OK2"}
-            NG_LINE_MAP = {"ng": "NG2", "ng2": "NG2", "bad": "NG2", "fail": "NG2", "failed": "NG2"}
+    data_all = payload.get("Data", payload)
+    if not isinstance(data_all, dict) or not data_all:
+        store_invalid(topic, payload, "Missing or invalid 'Data' object")
+        return
 
-        # ----------------------
-        # Empty payload check
-        # ----------------------
-        if not data or all(v in (None, {}) for v in data.values()):
-            store_invalid(line, data, "Empty payload")
-            return
+    influx_db_name = ALLOWED_TOPICS[topic]
+    influx = influx_client
+    if influx:
+        try:
+            influx.create_database(influx_db_name)
+            influx.switch_database(influx_db_name)
+        except Exception as e:
+            print(f"Warning: failed to prepare InfluxDB '{influx_db_name}': {e}")
 
-        # ----------------------
-        # Normalize keys (Q/P/A + OK/NG)
-        # ----------------------
-        normalized_keys = {}
+    any_stored = False
+    for line, data in data_all.items():
+        if line not in ALLOWED_LINES:
+            store_invalid(line, data, f"Line '{line}' not allowed")
+            continue
+        if not isinstance(data, dict) or not data:
+            store_invalid(line, data, "Empty or invalid line payload")
+            continue
+
+        normalized = {}
         for k, v in data.items():
             key_lower = k.lower()
-            # Map Q/P/A fields
-            norm_key = QPA_MAP.get(k)
-            # Map OK/NG fields per line
-            if not norm_key:
-                norm_key = OK_LINE_MAP.get(key_lower) or NG_LINE_MAP.get(key_lower)
-            # If still not mapped, keep original
-            if not norm_key:
-                norm_key = k
-            normalized_keys[norm_key] = v
-        data = normalized_keys
+            norm_key = QPA_MAP.get(k, k.lower())
+            if key_lower in OK_MAP:
+                norm_key = "ok"
+            elif key_lower in NG_MAP:
+                norm_key = "ng"
+            normalized[norm_key] = v
 
-        # ----------------------
-        # Detect invalid keys
-        # ----------------------
-        invalid_keys = set(data.keys()) - ALL_FIELDS
-        if invalid_keys:
-            store_invalid(line, data, f"Contains invalid keys: {invalid_keys}")
-            return
+        # Optional fields
+        for f in OPTIONAL_FIELDS:
+            normalized.setdefault(f, None)
 
-        # ----------------------
-        # Check for missing required fields
-        # ----------------------
-        missing_fields = [f for f in REQUIRED_FIELDS[line] if f not in data]
-        if missing_fields and any(f in data for f in REQUIRED_FIELDS[line]):
-            store_invalid(line, data, f"Missing required fields: {missing_fields}")
-            return
+        # Metrics - accept partial, don't reject if missing
+        normalized["topic"] = topic
+        normalized["received_at"] = datetime.utcnow().isoformat() + "Z"
 
-        # ----------------------
-        # Normalize numeric fields
-        # ----------------------
-        normalized = {}
-        # Numeric production metrics
-        for field_map in zip(["total","ok","ng","state","alarmcode","measurement","store"], REQUIRED_FIELDS[line]):
-            norm_field, data_field = field_map
-            normalized[norm_field] = data.get(data_field, 0)
+        # MongoDB
+        try:
+            latest_col.update_one({}, {"$set": {line: normalized}}, upsert=True)
+        except Exception as e:
+            store_invalid(line, data, f"MongoDB write error: {e}")
+            continue
 
-        # Q/P/A metrics
-        for metric in ["Quality","Performance","Availability"]:
-            normalized[metric.lower()] = data.get(metric, 0)
+        # InfluxDB
+        if influx:
+            try:
+                prod_fields = {k: normalized[k] for k in OPTIONAL_FIELDS if normalized[k] is not None}
+                if prod_fields:
+                    influx.write_points([{
+                        "measurement": line,
+                        "tags": {"topic": topic, "source": "factory"},
+                        "fields": prod_fields
+                    }])
+                for metric in REQUIRED_METRICS:
+                    val = normalized.get(metric)
+                    if val is not None:
+                        influx.write_points([{
+                            "measurement": metric,
+                            "tags": {"topic": topic, "line": line},
+                            "fields": {"value": val}
+                        }])
+            except Exception as e:
+                store_invalid(line, data, f"InfluxDB write error: {e}")
 
-        # ----------------------
-        # Validate numeric fields
-        # ----------------------
-        for key, value in normalized.items():
-            if not isinstance(value, (int, float)):
-                try:
-                    normalized[key] = float(value)
-                except Exception:
-                    store_invalid(line, data, f"Invalid {key} value: {value}")
-                    return
+        print(f"Stored valid data for {line} from topic {topic}")
+        any_stored = True
 
-        # Write to MongoDB
-        latest_col.update_one({}, {"$set": {line: normalized}}, upsert=True)
-
-        # Write to InfluxDB (if connected)
-        if influx_client:
-            if any(data.get(f) is not None for f in REQUIRED_FIELDS[line]):
-                influx_client.write_points([{
-                    "measurement": line,
-                    "tags": {"source": "factory"},
-                    "fields": {k: normalized[k] for k in ["state","total","ok","ng","alarmcode","measurement","store"]}
-                }])
-            for metric_name in ["quality","performance","availability"]:
-                influx_client.write_points([{
-                    "measurement": metric_name,
-                    "tags": {"source": "factory", "line": line},
-                    "fields": {"value": normalized[metric_name]}
-                }])
-
-        print(f"Stored valid data for {line}: {normalized}")
-
-    except Exception as e:
-        line = line if 'line' in locals() else "unknown"
-        store_invalid(line, data, f"Error processing message: {e}")
+    if not any_stored:
+        store_invalid(topic, payload, "No valid lines stored from payload")
 
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
 
 def mqtt_loop():
-    """MQTT connection loop with reconnect"""
     while True:
         try:
             mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
@@ -235,40 +216,39 @@ Thread(target=mqtt_loop, daemon=True).start()
 # ========================
 @app.get("/latest/mongo")
 def get_latest_mongo():
-    """Return latest data from MongoDB"""
     doc = latest_col.find_one({}, {"_id": 0})
-    return doc or {"production1": {}, "production2": {}}
-
-@app.get("/latest/influx")
-def get_latest_influx(limit: int = 10):
-    """Return latest points from InfluxDB"""
-    if not influx_client:
-        return {"error": "InfluxDB not connected"}
-
-    result = {
-        "production1": [], "production2": [],
-        "quality": {"production1": [], "production2": []},
-        "performance": {"production1": [], "production2": []},
-        "availability": {"production1": [], "production2": []}
-    }
-    try:
-        for line in ["production1","production2"]:
-            q = f'SELECT * FROM "{line}" ORDER BY time DESC LIMIT {limit}'
-            res = list(influx_client.query(q).get_points())
-            result[line] = res
-        for metric in ["quality","performance","availability"]:
-            for line in ["production1","production2"]:
-                q = f'SELECT * FROM "{metric}" WHERE "line"=\'{line}\' ORDER BY time DESC LIMIT {limit}'
-                res = list(influx_client.query(q).get_points())
-                result[metric][line] = res
-    except Exception as e:
-        print(f"InfluxDB query error: {e}")
-
-    return result
+    if not doc:
+        return {"production1": {}, "production2": {}}
+    return doc
 
 @app.get("/invalid_payloads")
 def get_invalid_payloads(limit: int = 10):
-    """Return latest invalid payloads from MongoDB"""
-    docs = list(invalid_col.find({}, {"_id": 0}).sort("time",-1).limit(limit))
+    docs = list(invalid_col.find({}, {"_id": 0}).sort("time", -1).limit(limit))
     return docs
+
+@app.get("/influx/{topic_name}")
+def get_influx_data(topic_name: str, limit: int = 10):
+    topic_map = {
+        "gw1": "iot/factory/gw1/production_all",
+        "gw2": "iot/factory/gw2/production_all",
+        "piyawat": "iot/factory/piyawat/production_all"
+    }
+    if topic_name not in topic_map:
+        return JSONResponse({"error": "Invalid topic name"}, status_code=400)
+    topic = topic_map[topic_name]
+    db_name = ALLOWED_TOPICS[topic]
+    if influx_client is None:
+        return JSONResponse({"error": "InfluxDB client not available"}, status_code=500)
+    try:
+        influx_client.switch_database(db_name)
+        measurements = influx_client.get_list_measurements()
+        result = {}
+        for m in measurements:
+            measurement_name = m['name']
+            query = f'SELECT * FROM "{measurement_name}" ORDER BY time DESC LIMIT {limit}'
+            points = list(influx_client.query(query).get_points())
+            result[measurement_name] = points
+        return result
+    except Exception as e:
+        return JSONResponse({"error": f"InfluxDB query failed: {e}"}, status_code=500)
 
