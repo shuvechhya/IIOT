@@ -84,6 +84,7 @@
             {#each items as item (item.title)}
                 <Sidebar.MenuItem>
                     <Sidebar.MenuButton
+                        class="cursor-pointer"
                         tooltipContent={item.title}
                         onclick={() => DashboardNav.change(item.id, item.title)}
                     >

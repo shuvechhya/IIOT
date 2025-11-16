@@ -25,7 +25,15 @@ export const auth = betterAuth({
         manager,
       },
     }),
-    jwt(),
+    jwt({
+      jwt: {
+        definePayload: ({ user }) => {
+          return {
+            id: user.id,
+          };
+        },
+      },
+    }),
     openAPI(),
   ],
 });

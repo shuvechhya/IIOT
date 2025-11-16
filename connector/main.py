@@ -1,11 +1,11 @@
-from fastapi import FastAPI
-import paho.mqtt.client as mqtt
-from influxdb import InfluxDBClient
-from datetime import datetime
 import json
-import threading
 import os
+import threading
+from datetime import datetime
 
+import paho.mqtt.client as mqtt
+from fastapi import FastAPI
+from influxdb import InfluxDBClient
 
 MQTT_BROKER = os.getenv("MQTT_BROKER", "127.0.0.1")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
@@ -17,7 +17,7 @@ INFLUX_HOST = os.getenv("INFLUX_HOST", "127.0.0.1")
 INFLUX_PORT = int(os.getenv("INFLUX_PORT", "8086"))
 INFLUX_DB = os.getenv("INFLUX_DB", "mqtt_data")
 
-MONGO_DB = os.getenv("MONGO_DB", "mongodb://127.0.0.1:27017/server")
+MONGO_DB = os.getenv("MONGO_DB", "mongodb://127.0.0.1:27017/iiot")
 
 influx_client = InfluxDBClient(host=INFLUX_HOST, port=INFLUX_PORT)
 influx_client.create_database(INFLUX_DB)

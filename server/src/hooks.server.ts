@@ -49,16 +49,21 @@ connect()
     } else {
       console.log("Users collection does not exist");
       console.log("Creating admin user");
-      await auth.api.signUpEmail({
-        body: {
-          email: "admin@gmail.com",
-          password: "admin123",
-          name: "Admin",
-        },
-      });
+      await auth.api
+        .signUpEmail({
+          body: {
+            email: "admin@gmail.com",
+            password: "admin123",
+            name: "Admin",
+          },
+        })
+        .then(() => "Successfully created admin")
+        .catch((e) => console.log(e));
       await db
-        .collection("users")
-        .updateOne({ email: "admin@gmail.com" }, { $set: { role: "admin" } });
+        .collection("user")
+        .updateOne({ email: "admin@gmail.com" }, { $set: { role: "admin" } })
+        .then(() => console.log("Converted to admin successfully"))
+        .catch((e) => console.log("Adminify failed! ", e));
     }
   })
   .catch((e: Error) => {

@@ -21,6 +21,8 @@
     import * as Sidebar from "$lib/components/ui/sidebar/index.js";
     import type { ComponentProps } from "svelte";
     import { getUser } from "$lib/api/auth.remote";
+    import StackMiddle from "@tabler/icons-svelte/icons/stack-middle";
+    import CloudNetwork from "@tabler/icons-svelte/icons/cloud-network";
 
     const data = {
         navMain: [
@@ -56,10 +58,16 @@
         // ],
         documents: [
             {
-                id: "settings",
-                name: "Settings",
+                id: "network_settings",
+                name: "Network Settings",
                 url: "#",
-                icon: SettingsIcon,
+                icon: CloudNetwork,
+            },
+            {
+                id: "middleware_settings",
+                name: "Middleware Settings",
+                url: "#",
+                icon: StackMiddle,
             },
         ],
     };

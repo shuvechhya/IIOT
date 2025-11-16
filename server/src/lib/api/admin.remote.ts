@@ -4,6 +4,7 @@ import { createUserSchema, updateUserSchema } from "$lib/schema/admin";
 import { redirect } from "@sveltejs/kit";
 import { UsersListSchema } from "$lib/schema/users";
 import z from "zod";
+import { get_influx } from "$db/influx";
 
 function requireAdmin() {
   const { locals, request } = getRequestEvent();
@@ -55,13 +56,17 @@ export const listUsers = query(async () => {
 
 export const deleteUser = command(z.string(), async (id) => {
   const { headers } = requireAdmin();
-  await auth.api.removeUser({
-    body: {
-      userId: id,
-    },
-    headers: headers,
-  });
-  await listUsers().refresh();
+  const influx = await get_influx();
+  if (influx !== null) {
+    await auth.api.removeUser({
+      body: {
+        userId: id,
+      },
+      headers: headers,
+    });
+    await influx.dropDatabase(id);
+    await listUsers().refresh();
+  }
 });
 
 export const updateUser = command(
@@ -82,16 +87,21 @@ export const updateUser = command(
   },
 );
 
-export const createUser = command(createUserSchema, async (user) => {
+export const createUser = command(createUserSchema, async (u) => {
   const _ = requireAdmin();
-  console.log(user);
-  await auth.api.createUser({
-    body: {
-      email: user.email,
-      password: user.password,
-      name: user.name,
-      role: user.role,
-    },
-  });
-  await listUsers().refresh();
+  const influx = await get_influx();
+  if (u.role !== "admin") {
+    if (influx !== null) {
+      let { user } = await auth.api.createUser({
+        body: {
+          email: u.email,
+          password: u.password,
+          name: u.name,
+          role: u.role,
+        },
+      });
+      await influx.createDatabase(user.id);
+      await listUsers().refresh();
+    }
+  }
 });
