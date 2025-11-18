@@ -1,9 +1,12 @@
+import os
 import platform
 import subprocess
 from subprocess import PIPE
 
 import httpx
-import uvicorn
+import psutil
+
+# import uvicorn
 from bson import ObjectId
 from configuration import user_col
 from fastapi import FastAPI, HTTPException
@@ -41,6 +44,46 @@ class SSIDType(BaseModel):
     ssid: str
     signal: str
     security: str
+
+
+@app.get("/ipaddress")
+async def getIpAddress():
+    addresses = []
+    for iface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family.name == "AF_INET":  # IPv4 only
+                addresses.append({"name": iface, "ip": addr.address})
+    return addresses
+
+
+@app.get("/connected/network")
+async def getConnectedNetwork():
+    os_type = platform.system()
+    ssid = ""
+
+    try:
+        if os_type == "Linux":
+            result = subprocess.run(
+                ["nmcli", "-t", "-f", "active,ssid", "dev", "wifi"],
+                stdout=PIPE,
+                stderr=PIPE,
+                text=True,
+                check=True,
+            )
+            output = result.stdout.strip()
+            for line in output.splitlines():
+                active, ssid_name = line.split(":")
+                if active == "yes":
+                    ssid = ssid_name.strip()
+                    break
+
+        else:
+            print(f"Unsupported OS: {os_type}")
+
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
+
+    return ssid
 
 
 @app.get("/network")
@@ -84,8 +127,8 @@ async def getNetwork():
                         ssids.append(
                             SSIDType(ssid=ssid, signal=signal, security=security)
                         )
-        except FileNotFoundError:
-            print("nmcli not found. Ensure NetworkManager is installed and running.")
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
     else:
         print(f"Unsupported OS: {os_type}")
@@ -115,19 +158,22 @@ async def connectWifi(network: NetworkConnect):
 
         else:
             print(f"Unsupported OS: {os_name}")
-            return {"result": "Error"}
+            return "error"
 
         print(f"Successfully connected to {network.ssid}")
-        return {"result": "Success"}
+        return "success"
 
     except subprocess.CalledProcessError as e:
-        print(f"Failed to connect to {network.ssid}: {e}")
-        return {"result": "Error"}
+        raise HTTPException(status_code=500, detail=f"Internal Error: {e}")
 
 
 @app.post("/auth")
 async def authenticate(auth: AuthRequest):
-    external_validation_url = "http://localhost:5173/api/auth/sign-in/email"
+    iiot_dashboard = os.getenv("IIOT_DASHBOARD_IP", "localhost")
+    dashboard_port = os.getenv("IIOT_DASHBOARD_PORT", 5173)
+    external_validation_url = (
+        f"http://{iiot_dashboard}:{dashboard_port}/api/auth/sign-in/email"
+    )
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
@@ -157,6 +203,7 @@ async def http_authorize(authz: AuthzRequest):
     topic_owner_id = authz.topic.split("/")[0]
 
     print(authz)
+    print(db_user)
     print(f"Topic owner ID extracted: {topic_owner_id}")
 
     if db_user:
@@ -180,10 +227,10 @@ async def http_authorize(authz: AuthzRequest):
         return {"result": "deny"}
 
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",  # The module:app string, or the app object itself
-        host="192.168.1.35",
-        port=8600,
-        reload=True,  # Optional: use for development
-    )
+# if __name__ == "__main__":
+#     uvicorn.run(
+#         "main:app",  # The module:app string, or the app object itself
+#         host="192.168.1.35",
+#         port=8600,
+#         reload=True,  # Optional: use for development
+#     )

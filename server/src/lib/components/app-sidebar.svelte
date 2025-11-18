@@ -63,12 +63,6 @@
                 url: "#",
                 icon: CloudNetwork,
             },
-            {
-                id: "middleware_settings",
-                name: "Middleware Settings",
-                url: "#",
-                icon: StackMiddle,
-            },
         ],
     };
 

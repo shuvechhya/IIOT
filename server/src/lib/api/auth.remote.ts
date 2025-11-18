@@ -1,5 +1,4 @@
-import { goto } from "$app/navigation";
-import { form, query, getRequestEvent } from "$app/server";
+import { query, getRequestEvent, form } from "$app/server";
 import { getDB } from "$db/mongo";
 import { auth } from "$lib/auth";
 import { loginSchema } from "$lib/schema/auth";

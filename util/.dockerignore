@@ -1,0 +1,7 @@
+.pixi
+__pycache__
+.env
+pixi.*
+.gitattributes
+.gitignore
+.git
