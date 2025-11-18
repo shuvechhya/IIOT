@@ -2,15 +2,15 @@ import { InfluxDB } from "influx";
 import {
   INFLUX_PORT,
   INFLUX_HOST,
-  INFLUXDB_PASSWORD,
-  INFLUXDB_USERNAME,
+  // INFLUXDB_PASSWORD,
+  // INFLUXDB_USERNAME,
 } from "$env/static/private";
 
 const influx = new InfluxDB({
   host: INFLUX_HOST,
   port: parseInt(INFLUX_PORT),
-  username: INFLUXDB_USERNAME,
-  password: INFLUXDB_PASSWORD,
+  // username: INFLUXDB_USERNAME ?? "admin",
+  // password: INFLUXDB_PASSWORD ?? "secret123",
 });
 
 export const get_influx = async (): Promise<InfluxDB | null> => {

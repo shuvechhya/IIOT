@@ -20,11 +20,11 @@ services:
     restart: unless-stopped
     ports:
       - "8087:8086"
-    environment:
-      INFLUXDB_DB: mqtt_data
-      INFLUXDB_ADMIN_USER: admin
-      INFLUXDB_ADMIN_PASSWORD: secret123
-      INFLUXDB_HTTP_AUTH_ENABLED: "true"
+    # environment:
+    # INFLUXDB_DB: mqtt_data
+    # INFLUXDB_ADMIN_USER: admin
+    # INFLUXDB_ADMIN_PASSWORD: secret123
+    # INFLUXDB_HTTP_AUTH_ENABLED: "true"
     volumes:
       - influxdb-data:/var/lib/influxdb
     network_mode: host
@@ -130,9 +130,9 @@ services:
       - BETTER_AUTH_URL=http://localhost:3000
       - BASE_URL=http://localhost:3000
       - MONGODB_URI=mongodb://admin:secret123@localhost:27017/iiot?authSource=admin
-      - INFLUXDB_PASSWORD=admin
-      - INFLUXDB_USERNAME=secret123
-      - INFLUX_PORT=8087
+      # - INFLUXDB_PASSWORD=admin
+      # - INFLUXDB_USERNAME=secret123
+      - INFLUX_PORT=8086
       - INFLUX_HOST=localhost
       - UTIL_SERVER_IP=localhost
       - UTIL_SERVER_PORT=8600
